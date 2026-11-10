@@ -1,0 +1,16 @@
+
+{
+  "name": "focus-rotina",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplicativo de organização pessoal FOCUS",
+  "scripts": {
+    "build": "echo Web app pronto"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}
