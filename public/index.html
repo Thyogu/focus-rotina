@@ -140,3 +140,295 @@ render();
 </script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#090909">
+<title>FOCUS</title>
+<style>
+:root{--accent:#f08b35;--bg:#090909;--card:#171717;--text:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif;padding:20px}
+header{padding:10px 0 20px}
+h1{font-size:34px;margin:0}
+.sub{color:#999;margin-top:8px}
+.card{background:var(--card);padding:18px;border-radius:16px;margin:15px 0}
+h2{font-size:19px;margin:0 0 15px}
+input,button{padding:13px;border:0;border-radius:9px;font-size:15px}
+input[type=text]{background:#292929;color:white;width:100%;margin:6px 0}
+button{background:var(--accent);color:white;font-weight:bold;cursor:pointer}
+.add{width:100%;margin-top:8px}
+.tabs{display:flex;gap:8px}
+.tabs button{flex:1;padding:10px 4px}
+.stat{font-size:28px;font-weight:bold;margin:8px 0}
+.bar{height:9px;background:#333;border-radius:20px;overflow:hidden}
+.fill{height:100%;background:var(--accent);width:0}
+.task{display:flex;align-items:center;gap:9px;padding:12px 0;border-bottom:1px solid #333}
+.task input{width:20px;height:20px}
+.task span{flex:1;overflow-wrap:anywhere}
+.done{text-decoration:line-through;color:#888}
+.delete{background:#333;padding:8px 12px}
+.required{font-size:12px;color:var(--accent);margin-top:3px}
+.option{display:flex;align-items:center;gap:8px;color:#ccc;margin:10px 0}
+.option input{width:18px;height:18px}
+.flame{text-align:center;padding:15px}
+.flame-icon{font-size:65px}
+.days{font-size:38px;font-weight:bold;color:#ff913d}
+.muted{color:#999;font-size:13px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat-box{background:#292929;padding:15px;border-radius:12px}
+.stat-box strong{font-size:25px;display:block}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.calendar div{background:#292929;border-radius:8px;text-align:center;padding:9px 0;font-size:12px}
+.calendar .active{background:#a9511d}
+.calendar .today{outline:2px solid var(--accent)}
+.medals{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.medal{background:#292929;padding:12px 3px;border-radius:10px;text-align:center;font-size:12px}
+.locked{opacity:.35}
+small{color:#999}
+</style>
+</head>
+<body>
+
+<header>
+<h1>FOCUS<span style="color:var(--accent)">.</span></h1>
+<p class="sub">Organize sua rotina. Concentre-se no que importa.</p>
+</header>
+
+<div class="card">
+<h2>Minha produtividade</h2>
+<div class="tabs">
+<button onclick="showPeriod('day')">Dia</button>
+<button onclick="showPeriod('week')">Semana</button>
+<button onclick="showPeriod('month')">Mês</button>
+</div>
+<div class="stat" id="percent">0%</div>
+<div class="bar"><div class="fill" id="fill"></div></div>
+<p><small id="count">0 de 0 tarefas concluídas</small></p>
+</div>
+
+<div class="card">
+<h2>Nova tarefa</h2>
+<input id="taskName" type="text" placeholder="O que você precisa fazer?">
+<label class="option">
+<input type="checkbox" id="newRequired" checked>
+Tarefa obrigatória para a ofensiva
+</label>
+<button class="add" onclick="addTask()">+ Adicionar tarefa</button>
+</div>
+
+<div class="card">
+<h2>Minha rotina</h2>
+<div id="tasks"></div>
+</div>
+
+<div class="card">
+<h2>🔥 Minha ofensiva</h2>
+<div class="flame">
+<div class="flame-icon">🔥</div>
+<div class="days" id="streak">0 dias</div>
+<p id="streakMessage">Comece sua primeira ofensiva!</p>
+</div>
+<div class="stats-grid">
+<div class="stat-box">
+<strong id="best">0</strong>
+<small>Recorde pessoal</small>
+</div>
+<div class="stat-box">
+<strong id="current">0</strong>
+<small>Ofensiva atual</small>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>Calendário de conquistas</h2>
+<p class="muted">Dias em que todas as tarefas obrigatórias foram concluídas.</p>
+<div class="calendar" id="calendar"></div>
+</div>
+
+<div class="card">
+<h2>🏆 Medalhas</h2>
+<div class="medals" id="medals"></div>
+</div>
+
+<div class="card">
+<h2>Personalização</h2>
+<p class="muted">Cor principal</p>
+<input type="color" id="color" value="#f08b35" onchange="changeColor(this.value)">
+</div>
+
+<script>
+let tasks=JSON.parse(localStorage.getItem('focusTasks')||'[]');
+let period='day';
+let streakDays=JSON.parse(localStorage.getItem('focusStreakDays')||'[]');
+let best=Number(localStorage.getItem('focusBest')||0);
+
+function today(){
+ return new Date().toLocaleDateString('en-CA');
+}
+
+function save(){
+ localStorage.setItem('focusTasks',JSON.stringify(tasks));
+ render();
+}
+
+function addTask(){
+ const input=document.getElementById('taskName');
+ const name=input.value.trim();
+ if(!name)return;
+ tasks.push({
+  id:Date.now(),
+  name:name,
+  done:false,
+  required:document.getElementById('newRequired').checked,
+  date:today()
+ });
+ input.value='';
+ save();
+}
+
+function toggleTask(id){
+ const t=tasks.find(x=>x.id===id);
+ if(t)t.done=!t.done;
+ checkStreak();
+ save();
+}
+
+function toggleRequired(id){
+ const t=tasks.find(x=>x.id===id);
+ if(t)t.required=!t.required;
+ checkStreak();
+ save();
+}
+
+function deleteTask(id){
+ tasks=tasks.filter(x=>x.id!==id);
+ checkStreak();
+ save();
+}
+
+function checkStreak(){
+ const date=today();
+ const required=tasks.filter(t=>t.date===date&&t.required);
+ if(required.length>0&&required.every(t=>t.done)){
+  if(!streakDays.includes(date))streakDays.push(date);
+ }else{
+  streakDays=streakDays.filter(d=>d!==date);
+ }
+ localStorage.setItem('focusStreakDays',JSON.stringify(streakDays));
+ const current=calculateStreak();
+ if(current>best){
+  best=current;
+  localStorage.setItem('focusBest',best);
+ }
+}
+
+function calculateStreak(){
+ let count=0;
+ let d=new Date();
+ if(!streakDays.includes(today()))d.setDate(d.getDate()-1);
+ while(true){
+  const key=d.toLocaleDateString('en-CA');
+  if(!streakDays.includes(key))break;
+  count++;
+  d.setDate(d.getDate()-1);
+ }
+ return count;
+}
+
+function showPeriod(p){
+ period=p;
+ render();
+}
+
+function render(){
+ const now=new Date();
+ const start=new Date(now);
+ if(period==='week')start.setDate(now.getDate()-6);
+ if(period==='month')start.setDate(now.getDate()-29);
+
+ const selected=tasks.filter(t=>t.date>=start.toLocaleDateString('en-CA')&&t.date<=today());
+ const total=selected.length;
+ const completed=selected.filter(t=>t.done).length;
+ const pct=total?Math.round(completed/total*100):0;
+
+ document.getElementById('percent').textContent=pct+'%';
+ document.getElementById('fill').style.width=pct+'%';
+ document.getElementById('count').textContent=completed+' de '+total+' tarefas concluídas';
+
+ document.getElementById('tasks').innerHTML=tasks
+ .filter(t=>period==='day'?t.date===today():selected.includes(t))
+ .map(t=>`
+ <div class="task">
+ <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${t.id})">
+ <span class="${t.done?'done':''}">
+ ${escapeHTML(t.name)}
+ <div class="required" onclick="toggleRequired(${t.id})" style="cursor:pointer">
+ ${t.required?'🔥 Obrigatória':'○ Opcional'} · alterar
+ </div>
+ </span>
+ <button class="delete" onclick="deleteTask(${t.id})">×</button>
+ </div>`).join('')||'<p class="muted">Nenhuma tarefa cadastrada.</p>';
+
+ const current=calculateStreak();
+ document.getElementById('streak').textContent=current+' dias';
+ document.getElementById('current').textContent=current;
+ document.getElementById('best').textContent=best;
+ document.getElementById('streakMessage').textContent=
+ current>0?'Você está mantendo sua sequência!':'Complete todas as tarefas obrigatórias para começar!';
+
+ renderCalendar();
+ renderMedals();
+}
+
+function renderCalendar(){
+ const el=document.getElementById('calendar');
+ el.innerHTML='';
+ for(let i=34;i>=0;i--){
+  const d=new Date();
+  d.setDate(d.getDate()-i);
+  const key=d.toLocaleDateString('en-CA');
+  const item=document.createElement('div');
+  item.textContent=d.getDate();
+  if(streakDays.includes(key))item.classList.add('active');
+  if(key===today())item.classList.add('today');
+  el.appendChild(item);
+ }
+}
+
+function renderMedals(){
+ const levels=[7,30,60,100];
+ document.getElementById('medals').innerHTML=levels.map(n=>`
+ <div class="medal ${best>=n?'':'locked'}">
+ <div style="font-size:23px">${best>=n?'🏆':'🔒'}</div>
+ ${n} dias
+ </div>`).join('');
+}
+
+function escapeHTML(s){
+ return s.replace(/[&<>"']/g,c=>({
+ '&':'&amp;','<':'&lt;','>':'&gt;',
+ '"':'&quot;',"'":'&#39;'
+ }[c]));
+}
+
+function changeColor(color){
+ document.documentElement.style.setProperty('--accent',color);
+ localStorage.setItem('focusColor',color);
+}
+
+const savedColor=localStorage.getItem('focusColor');
+if(savedColor){
+ document.getElementById('color').value=savedColor;
+ changeColor(savedColor);
+}
+
+checkStreak();
+render();
+</script>
+</body>
+</html>
+
