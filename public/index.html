@@ -274,16 +274,40 @@ function escapeHTML(s){
  }[c]));
 }
 
-function changeColor(color){
- document.documentElement.style.setProperty('--accent',color);
- localStorage.setItem('focusColor',color);
+const colors = [
+  '#F08B35',
+  '#8B5CF6',
+  '#3B82F6',
+  '#22C55E',
+  '#EC4899',
+  '#EF4444',
+  '#06B6D4',
+  '#EAB308',
+  '#F97316',
+  '#FFFFFF'
+];
+
+function changeColor(color) {
+  document.documentElement.style.setProperty('--accent', color);
+  localStorage.setItem('focusColor', color);
+  document.getElementById('color').value = color;
+  renderPalette();
 }
 
-const savedColor=localStorage.getItem('focusColor');
-if(savedColor){
- document.getElementById('color').value=savedColor;
- changeColor(savedColor);
+function renderPalette() {
+  const selected = localStorage.getItem('focusColor') || '#F08B35';
+
+  document.getElementById('palette').innerHTML = colors.map(color => `
+    <button class="swatch ${color.toLowerCase() === selected.toLowerCase() ? 'selected' : ''}"
+      style="background:${color}"
+      aria-label="Selecionar cor ${color}"
+      onclick="changeColor('${color}')">
+    </button>
+  `).join('');
 }
+
+const savedColor = localStorage.getItem('focusColor');
+changeColor(savedColor || '#F08B35');
 
 checkStreak();
 render();
