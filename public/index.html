@@ -47,7 +47,15 @@ button{background:var(--accent);color:white;font-weight:bold;cursor:pointer}
 .medal{background:#292929;padding:12px 3px;border-radius:10px;text-align:center;font-size:12px}
 .locked{opacity:.35}
 small{color:#999}
-</style>
+.tabs button:not(.active){
+  background:#292929;
+  color:#aaa;
+}
+
+.tabs button.active{
+  background:var(--accent);
+  color:white;
+}</style>
 </head>
 <body>
 
@@ -199,8 +207,19 @@ function calculateStreak(){
 }
 
 function showPeriod(p){
- period=p;
- render();
+  period=p;
+
+  document.querySelectorAll('.tabs button').forEach(button=>{
+    const nome=button.textContent.trim().toLowerCase();
+    const ativo =
+      (p==='day' && nome==='dia') ||
+      (p==='week' && nome==='semana') ||
+      (p==='month' && nome==='mês');
+
+    button.classList.toggle('active',ativo);
+  });
+
+  render();
 }
 
 function render(){
